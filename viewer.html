@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Roberto Silva - 3D Models Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin: 0; background: #121212; color: #eee; font-family: sans-serif; }
+    header { background: #4b6cb7; color: #fff; text-align: center; padding: 1rem; font-size: 1.5rem; font-weight: bold; }
+    nav { background: #1e1e1e; display: flex; justify-content: center; }
+    nav button {
+      background: none; border: none; color: #ccc; padding: 1rem;
+      cursor: pointer; font-weight: bold; font-size: 1rem;
+    }
+    nav button.active { color: #4b6cb7; border-bottom: 3px solid #4b6cb7; }
+
+    main { padding: 2rem; max-width: 900px; margin: auto; }
+    section { display: none; }
+    section.active { display: block; animation: fade 0.3s ease; }
+
+    @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+
+    .model-card {
+      background: #222; padding: 1rem; border-radius: 8px;
+      margin-bottom: 1rem; box-shadow: 0 0 10px #000;
+    }
+    .model-card h3 { margin: 0 0 0.5rem; color: #4b6cb7; }
+    .model-card p { margin: 0.5rem 0 1rem; color: #ccc; }
+    .model-card button {
+      background: #4b6cb7; color: #fff; border: none;
+      padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .modal-content {
+      background: #181818;
+      padding: 1rem;
+      border-radius: 10px;
+      position: relative;
+      width: 90%;
+      max-width: 800px;
+    }
+
+    #viewerCanvas {
+      width: 100%;
+      height: 500px;
+      border-radius: 8px;
+      background: #000;
+      display: block;
+    }
+
+    .btn-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #4b6cb7;
+      color: white;
+      border: none;
+      padding: 0.4rem 0.7rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<header>Roberto Silva - 3D Models Portfolio</header>
+
+<nav>
+  <button class="tab-btn active" data-tab="about">About Me</button>
+  <button class="tab-btn" data-tab="models">Models</button>
+  <button class="tab-btn" data-tab="contact">Contact Me</button>
+</nav>
+
+<main>
+  <section id="about" class="active">
+    <p>
+      hey!! i'm <strong>roberto silva</strong>, a guy who models weapons and stuff.
+      not much to say about me lol, but if u wanna get in touch, just
+      <a href="#" class="tab-link" data-target="contact">check the CONTACT ME tab!!</a>
+    </p>
+  </section>
+
+  <section id="models">
+    <div class="model-card">
+      <h3>mid-poly glock 17</h3>
+      <p>this is a mid-poly glock 17 i made not long ago for a comm. pretty chill model</p>
+      <button onclick="showModal('gun.glb')">View Model!</button>
+    </div>
+    <div class="model-card">
+      <h3>realistic ak-47</h3>
+      <p>yeah, this one’s a realistic ak47 i made a while back. not much else to say lol</p>
+      <button onclick="showModal('gun1.glb')">View Model!</button>
+    </div>
+    <div class="model-card">
+      <h3>low poly mp-40</h3>
+      <p>-</p>
+      <button onclick="showModal('gun2.glb')">View Model!</button>
+    </div>
+  </section>
+
+  <section id="contact">
+    <p><strong>discord:</strong> robertosilva999*</p>
+  </section>
+</main>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-content">
+    <button class="btn-close" onclick="closeModal()">close</button>
+    <canvas id="viewerCanvas"></canvas>
+  </div>
+</div>
+
+<!-- Babylon.js -->
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+<script>
+  const tabs = document.querySelectorAll(".tab-btn");
+  const sections = document.querySelectorAll("main > section");
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const target = tab.dataset.tab;
+      sections.forEach(sec => {
+        sec.classList.toggle("active", sec.id === target);
+      });
+      closeModal();
+    });
+  });
+
+  document.querySelectorAll(".tab-link").forEach(link => {
+    link.addEventListener("click", e => {
+      e.preventDefault();
+      document.querySelector('[data-tab="contact"]').click();
+    });
+  });
+
+  let engine, scene, modelLoaded = false;
+
+  function showModal(modelPath) {
+    const modal = document.getElementById("modal");
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+
+    const canvas = document.getElementById("viewerCanvas");
+    engine = new BABYLON.Engine(canvas, true);
+    scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(0.07, 0.07, 0.07);
+
+    const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2.5, 10, BABYLON.Vector3.Zero(), scene);
+    camera.attachControl(canvas, true);
+
+    // zoom fixo pro mp-40 ficar bem longe
+    if (modelPath === 'gun2.glb') {
+      camera.lowerRadiusLimit = 190;
+      camera.upperRadiusLimit = 190;
+      camera.radius = 190;
+    } else {
+      camera.lowerRadiusLimit = 10;
+      camera.upperRadiusLimit = 10;
+      camera.radius = 10;
+    }
+
+    const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+    const light2 = new BABYLON.DirectionalLight("light2", new BABYLON.Vector3(0, -1, 1), scene);
+
+    BABYLON.SceneLoader.Append("", modelPath, scene, () => {
+      engine.runRenderLoop(() => scene.render());
+      modelLoaded = true;
+    }, null, (scene, message) => {
+      alert("failed to load model: " + message);
+    });
+
+    window.addEventListener("resize", () => engine.resize());
+  }
+
+  function closeModal() {
+    const modal = document.getElementById("modal");
+    modal.style.display = "none";
+    document.body.style.overflow = "auto";
+
+    if (engine) {
+      engine.stopRenderLoop();
+      engine.dispose();
+      engine = null;
+      scene = null;
+      modelLoaded = false;
+    }
+  }
+</script>
+
+</body>
+</html>
